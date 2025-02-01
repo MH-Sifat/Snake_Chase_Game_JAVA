@@ -1,0 +1,400 @@
+
+###
+// 1st code from button panel ajk bainaisi eta for pause resume exit and bonus system
+
+import javax.swing.*;
+import java.awt.*;
+
+public class snakegame.design.ButtonPanel extends JPanel {
+    public snakegame.design.ButtonPanel(snakegame.logic.GamePanel gamePanel, JFrame parentFrame) {
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBackground(Color.LIGHT_GRAY);
+        setPreferredSize(new Dimension(150, 600));
+
+        // Buttons
+        JButton pauseButton = new JButton("Pause");
+        JButton resumeButton = new JButton("Resume");
+        JButton newGameButton = new JButton("New Game");
+        JButton exitButton = new JButton("Exit");
+
+        // Button actions
+        pauseButton.addActionListener(e -> gamePanel.pauseGame());
+        resumeButton.addActionListener(e -> gamePanel.resumeGame());
+        newGameButton.addActionListener(e -> gamePanel.startGame());
+        exitButton.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                    parentFrame,
+                    "Are you sure you want to exit?",
+                    "Exit Confirmation",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (confirm == JOptionPane.YES_OPTION) {
+                parentFrame.dispose(); // Close the current frame
+                // Optionally, return to a main menu or terminate the application
+                System.exit(0); // Terminate the program
+            }
+        });
+
+        // Add buttons to panel
+        add(Box.createVerticalStrut(20)); // Spacing
+        add(pauseButton);
+        add(Box.createVerticalStrut(10));
+        add(resumeButton);
+        add(Box.createVerticalStrut(10));
+        add(newGameButton);
+        add(Box.createVerticalStrut(10));
+        add(exitButton);
+    }
+}
+*/
+###
+
+### codes from game panel
+// 1st code of gamePanel
+/*
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+
+public class snakegame.logic.GamePanel extends JPanel implements ActionListener, KeyListener {
+    private final int WIDTH = 800, HEIGHT = 600, UNIT_SIZE = 25;
+    private snakegame.logic.Snake snake;
+    private snakegame.logic.Food food;
+    private boolean running;
+    private int score, highScore;
+    private Timer timer;
+
+    public snakegame.logic.GamePanel() {
+        setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setBackground(Color.BLACK);
+        setFocusable(true);
+        addKeyListener(this);
+        startGame();
+    }
+
+    private void startGame() {
+        snake = new snakegame.logic.Snake(UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
+        food = new snakegame.logic.Food(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE, UNIT_SIZE);
+        running = true;
+        score = 0;
+        highScore = snakegame.management.ScoreManager.loadHighScore();
+        timer = new Timer(100, this);
+        timer.start();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (running) {
+            food.draw(g);
+            snake.draw(g);
+            g.setColor(Color.WHITE);
+            g.drawString("Score: " + score, 10, 10);
+            g.drawString("High Score: " + highScore, 10, 25);
+        } else {
+            gameOver(g);
+        }
+    }
+
+    private void gameOver(Graphics g) {
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.drawString("Game Over", WIDTH / 2 - 100, HEIGHT / 2);
+        snakegame.management.ScoreManager.saveHighScore(Math.max(score, highScore));
+
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.drawString("Game Over", WIDTH / 2 - 100, HEIGHT / 2);
+        snakegame.management.ScoreManager.saveHighScore(Math.max(score, highScore));
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (running) {
+            snake.move();
+            if (snake.checkCollision() || snake.isOutOfBounds(WIDTH, HEIGHT)) {
+                running = false;
+            }
+            if (snake.getBody().get(0).x == food.getX() && snake.getBody().get(0).y == food.getY()) {
+                snake.grow();
+                score++;
+                food.setPosition(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                        new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE);
+            }
+        }
+        repaint();
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP -> snake.setDirection('U');
+            case KeyEvent.VK_DOWN -> snake.setDirection('D');
+            case KeyEvent.VK_LEFT -> snake.setDirection('L');
+            case KeyEvent.VK_RIGHT -> snake.setDirection('R');
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+}
+*/
+
+
+// 2 nd code from chatgpt bonus system is working well
+/*
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+
+public class snakegame.logic.GamePanel extends JPanel implements ActionListener, KeyListener {
+    private final int WIDTH = 800, HEIGHT = 600, UNIT_SIZE = 25;
+    private snakegame.logic.Snake snake;
+    private snakegame.logic.Food food;
+    private snakegame.logic.Food bonusFood;
+    private boolean running, paused, bonusFoodVisible;
+    private int score, highScore, bonusFoodTimer;
+    private Timer timer;
+
+    public snakegame.logic.GamePanel() {
+        setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setBackground(Color.BLACK);
+        setFocusable(true);
+        addKeyListener(this);
+        startGame();
+    }
+
+    public void startGame() {
+        snake = new snakegame.logic.Snake(UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
+        food = new snakegame.logic.Food(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE, UNIT_SIZE);
+        bonusFood = null;
+        bonusFoodVisible = false;
+        bonusFoodTimer = 0;
+        running = true;
+        paused = false;
+        score = 0;
+        highScore = snakegame.management.ScoreManager.loadHighScore();
+        timer = new Timer(100, this);
+        timer.start();
+        repaint();
+    }
+
+    public void pauseGame() {
+        if (running && !paused) {
+            paused = true;
+            timer.stop();
+        }
+    }
+
+    public void resumeGame() {
+        if (running && paused) {
+            paused = false;
+            timer.start();
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (running) {
+            food.draw(g);
+            if (bonusFoodVisible && bonusFood != null) {
+                bonusFood.draw(g);
+            }
+            snake.draw(g);
+            g.setColor(Color.WHITE);
+            g.drawString("Score: " + score, 10, 10);
+            g.drawString("High Score: " + highScore, 10, 25);
+        } else {
+            gameOver(g);
+        }
+    }
+
+    private void gameOver(Graphics g) {
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.drawString("Game Over", WIDTH / 2 - 100, HEIGHT / 2);
+        snakegame.management.ScoreManager.saveHighScore(Math.max(score, highScore));
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (running && !paused) {
+            snake.move();
+            if (snake.checkCollision() || snake.isOutOfBounds(WIDTH, HEIGHT)) {
+                running = false;
+            }
+
+            // Check collision with food
+            if (snake.getBody().get(0).x == food.getX() && snake.getBody().get(0).y == food.getY()) {
+                snake.grow();
+                score++;
+                food.setPosition(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                        new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE);
+
+                // Trigger bonus food visibility at certain score milestones
+                if (score % 10 == 0) {
+                    bonusFood = new snakegame.logic.Food(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                            new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE, UNIT_SIZE);
+                    bonusFoodVisible = true;
+                    bonusFoodTimer = 50; // Bonus food will be visible for 50 ticks
+                }
+            }
+
+            // Check collision with bonus food
+            if (bonusFoodVisible && bonusFood != null &&
+                    snake.getBody().get(0).x == bonusFood.getX() && snake.getBody().get(0).y == bonusFood.getY()) {
+                score += 10;
+                bonusFoodVisible = false;
+                bonusFood = null;
+            }
+
+            // Handle bonus food timer
+            if (bonusFoodVisible) {
+                bonusFoodTimer--;
+                if (bonusFoodTimer <= 0) {
+                    bonusFoodVisible = false;
+                    bonusFood = null;
+                }
+            }
+        }
+        repaint();
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP -> snake.setDirection('U');
+            case KeyEvent.VK_DOWN -> snake.setDirection('D');
+            case KeyEvent.VK_LEFT -> snake.setDirection('L');
+            case KeyEvent.VK_RIGHT -> snake.setDirection('R');
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+}
+*/
+
+
+// 3rd code bonus system is missing but pause resume exit and new game is working well
+
+/*
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+
+public class snakegame.logic.GamePanel extends JPanel implements ActionListener, KeyListener {
+    private final int WIDTH = 800, HEIGHT = 600, UNIT_SIZE = 25;
+    private snakegame.logic.Snake snake;
+    private snakegame.logic.Food food;
+    private boolean running;
+    private boolean paused; // To track pause state
+    private int score, highScore;
+    private Timer timer;
+
+    public snakegame.logic.GamePanel() {
+        setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setBackground(Color.BLACK);
+        setFocusable(true);
+        addKeyListener(this);
+        startGame();
+    }
+
+    public void startGame() {
+        snake = new snakegame.logic.Snake(UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
+        food = new snakegame.logic.Food(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE, UNIT_SIZE);
+        running = true;
+        paused = false; // Ensure the game is not paused initially
+        score = 0;
+        highScore = snakegame.management.ScoreManager.loadHighScore();
+        timer = new Timer(100, this);
+        timer.start();
+        requestFocusInWindow(); // Ensure keyboard focus
+    }
+
+    public void pauseGame() {
+        if (running && !paused) {
+            paused = true;
+            timer.stop();
+        }
+    }
+
+    public void resumeGame() {
+        if (running && paused) {
+            paused = false;
+            timer.start();
+            requestFocusInWindow(); // Regain focus for key inputs
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (running) {
+            food.draw(g);
+            snake.draw(g);
+            g.setColor(Color.WHITE);
+            g.drawString("Score: " + score, 10, 10);
+            g.drawString("High Score: " + highScore, 10, 25);
+        } else {
+            gameOver(g);
+        }
+    }
+
+    private void gameOver(Graphics g) {
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.drawString("Game Over", WIDTH / 2 - 100, HEIGHT / 2);
+        snakegame.management.ScoreManager.saveHighScore(Math.max(score, highScore));
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (running && !paused) {
+            snake.move();
+            if (snake.checkCollision() || snake.isOutOfBounds(WIDTH, HEIGHT)) {
+                running = false;
+                timer.stop();
+            }
+            if (snake.getBody().get(0).x == food.getX() && snake.getBody().get(0).y == food.getY()) {
+                snake.grow();
+                score++;
+                food.setPosition(new Random().nextInt(WIDTH / UNIT_SIZE) * UNIT_SIZE,
+                        new Random().nextInt(HEIGHT / UNIT_SIZE) * UNIT_SIZE);
+            }
+        }
+        repaint();
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (!paused) { // Only process key inputs if not paused
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_UP -> snake.setDirection('U');
+                case KeyEvent.VK_DOWN -> snake.setDirection('D');
+                case KeyEvent.VK_LEFT -> snake.setDirection('L');
+                case KeyEvent.VK_RIGHT -> snake.setDirection('R');
+            }
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+}
+*/
